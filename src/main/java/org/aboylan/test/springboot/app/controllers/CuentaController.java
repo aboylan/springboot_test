@@ -13,7 +13,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
-@Controller
+@RestController
 @RequestMapping("/api/cuentas")
 public class CuentaController {
 
