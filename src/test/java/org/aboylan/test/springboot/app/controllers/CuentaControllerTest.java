@@ -3,8 +3,10 @@ package org.aboylan.test.springboot.app.controllers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.aboylan.test.springboot.app.Datos;
+import org.aboylan.test.springboot.app.models.Cuenta;
 import org.aboylan.test.springboot.app.models.TransaccionDTO;
 import org.aboylan.test.springboot.app.services.CuentaService;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +18,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -89,4 +93,25 @@ class CuentaControllerTest {
                 .andExpect(content().json(objectMapper.writeValueAsString(response)));
 
     }
+
+    @Test
+    void testListar() throws Exception {
+        // Given
+        List<Cuenta> cuentas = Arrays.asList(Datos.crearCuenta001().orElseThrow(),
+                Datos.crearCuenta002().orElseThrow());
+        when(cuentaService.findAll()).thenReturn(cuentas);
+
+        // When
+        mvc.perform(get("/api/cuentas").contentType(MediaType.APPLICATION_JSON))
+        // Then
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].persona").value("Alex"))
+                .andExpect(jsonPath("$[1].persona").value("John"))
+                .andExpect(jsonPath("$[0].saldo").value("1000"))
+                .andExpect(jsonPath("$[1].saldo").value("2000"))
+                .andExpect(jsonPath("$", Matchers.hasSize(2)))
+                .andExpect(content().json(objectMapper.writeValueAsString(cuentas)));
+    }
+
 }
