@@ -20,6 +20,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 
 @SpringBootTest
 class SpringbootTestApplicationTests {
@@ -124,4 +126,20 @@ class SpringbootTestApplicationTests {
 		verify(cuentaRepository, times(2)).findById(1L);
 	}
 
+	@Test
+	void testFindAll() {
+		//Given
+		List<Cuenta> datos = Arrays.asList(crearCuenta001().orElseThrow(), crearCuenta002().orElseThrow());
+		when(cuentaRepository.findAll()).thenReturn(datos);
+
+		// When
+		List<Cuenta> cuentas = service.findAll();
+
+		// Then
+		assertFalse(cuentas.isEmpty());
+		assertEquals(2, cuentas.size());
+		assertTrue(cuentas.contains(crearCuenta002().orElseThrow()));
+
+		verify(cuentaRepository).findAll();
+	}
 }
