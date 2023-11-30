@@ -3,9 +3,9 @@ package org.aboylan.test.springboot.app.controllers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.aboylan.test.springboot.app.models.Cuenta;
 import org.aboylan.test.springboot.app.models.TransaccionDTO;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -21,6 +21,8 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.hamcrest.Matchers.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 class CuentaControllerWebTestClientTests {
 
@@ -35,6 +37,7 @@ class CuentaControllerWebTestClientTests {
     }
 
     @Test
+    @Order(1)
     void testTransferir() throws JsonProcessingException {
         // Given
         TransaccionDTO dto = new TransaccionDTO();
@@ -54,8 +57,9 @@ class CuentaControllerWebTestClientTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(dto)
                 .exchange()
-        // Then
+                // Then
                 .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
                 .consumeWith(respuesta -> {
                     try {
@@ -70,11 +74,39 @@ class CuentaControllerWebTestClientTests {
                 })
                 .jsonPath("$.mensaje").isNotEmpty()
                 .jsonPath("$.mensaje").value(is("Transferencia realizada con exito"))
-                .jsonPath("$.mensaje").value( valor -> assertEquals("Transferencia realizada con exito", valor))
+                .jsonPath("$.mensaje").value(valor -> assertEquals("Transferencia realizada con exito", valor))
                 .jsonPath("$.mensaje").isEqualTo("Transferencia realizada con exito")
                 .jsonPath("$.transaccion.cuentaOrigenId").isEqualTo(dto.getCuentaOrigenId())
                 .jsonPath("$.date").isEqualTo(LocalDate.now().toString())
                 .json(objectMapper.writeValueAsString(response));
 
     }
+
+    @Test
+    @Order(2)
+    void testDetalle() throws JsonProcessingException {
+        Cuenta cuenta =  new Cuenta(1L, "Alex", new BigDecimal("900"));
+        client.get().uri("/api/cuentas/1").exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$.persona").isEqualTo("Alex")
+                .jsonPath("$.saldo").isEqualTo(900)
+                .json(objectMapper.writeValueAsString(cuenta));
+    }
+
+    @Test
+    @Order(3)
+    void testDetalle2() {
+        client.get().uri("/api/cuentas/2").exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(Cuenta.class)
+                .consumeWith(response -> {
+                    Cuenta cuenta = response.getResponseBody();
+                    assertEquals("John", cuenta.getPersona());
+                    assertEquals("2100.00", cuenta.getSaldo().toPlainString());
+                });
+    }
+
 }
